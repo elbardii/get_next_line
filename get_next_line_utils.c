@@ -10,3 +10,50 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "get_next_line.h"
+
+int	ft_chr_new_line(char *s)
+{
+	if (!s)
+		return (0);
+	while (*s)
+	{
+		if (*s == '\n')
+			return (1);
+		s++;
+	}
+	return (0);
+}
+
+char	*ft_strjoin(char *s1, char *s2)
+{
+	char	*str;
+	size_t	i;
+	size_t	j;
+
+	if (!s1 && !s2)
+		return (NULL);
+	str = malloc(sizeof(char) * (ft_strlen(s1) + ft_strlen(s2) + 1));
+	if (!str)
+		return (NULL);
+	i = 0;
+	j = 0;
+	while (s1 && s1[i])
+		str[j++] = s1[i++];
+	i = 0;
+	while (s2 && s2[i])
+		str[j++] = s2[i++];
+	str[j] = '\0';
+	free(s1);
+	return (str);
+}
+
+size_t	ft_strlen(char *s)
+{
+	size_t	i;
+
+	i = 0;
+	while (s && s[i])
+		i++;
+	return (i);
+}
