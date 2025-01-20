@@ -14,100 +14,163 @@
 
 static char *read_line(int fd, char *buffer)
 {
-    char *morceau;
-    int read_bytes;
+    char *temp_buffer;
+    int bytes_read;
 
-    morceau = malloc(sizeof(char) * BUFFER_SIZE + 1);
-    if (!morceau)
+    temp_buffer = malloc(sizeof(char) * BUFFER_SIZE + 1);
+    if (!temp_buffer)
         return (NULL);
-    read_bytes = 1;
-    while (!ft_chr_new_line(buffer) && read_bytes != 0)
+    bytes_read = 1;
+    while (!ft_chr_new_line(buffer) && bytes_read != 0)
     {
-        read_bytes = read(fd, morceau, BUFFER_SIZE);
-        if (read_bytes == -1)
+        bytes_read = read(fd, temp_buffer, BUFFER_SIZE);
+        if (bytes_read == -1)
         {
-            free(morceau);
-            morceau = NULL;
+            free(temp_buffer);
+            temp_buffer = NULL;
             return (NULL);
         }
-        morceau[read_bytes] = '\0';
-        buffer = ft_strjoin(buffer, morceau);
+        temp_buffer[bytes_read] = '\0';
+        buffer = ft_strjoin(buffer, temp_buffer);
     }
-    free(morceau);
-    morceau = NULL;
+    free(temp_buffer);
+    temp_buffer = NULL;
     return (buffer);
 }
 
-static char *create_line(char *buffer)
+static char *extract_line_from_buffer(char *buffer)
 {
-    int i;
-    char *line;
+    int line_length;
+    char *extracted_line;
 
-    i = 0;
-    if (!buffer[i])
+    line_length = 0;
+    if (!buffer[line_length])
         return (NULL);
-    while (buffer[i] && buffer[i] != '\n')
-        i++;
-    i++;
-    line = malloc(sizeof(char) * i + 1);
-    line[i--] = 0;
-    while (i >= 0)
-        line[i--] = buffer[i];
-    return (line);
+    
+    // Find length up to newline or end
+    while (buffer[line_length] && buffer[line_length] != '\n')
+        line_length++;
+    line_length++; // Include newline if present
+    
+    // Allocate space for line plus null terminator
+    extracted_line = malloc(sizeof(char) * (line_length + 1));
+    if (!extracted_line)
+        return (NULL);
+        
+    // Copy characters in reverse to preserve original buffer
+    extracted_line[line_length] = '\0';
+    while (--line_length >= 0)
+        extracted_line[line_length] = buffer[line_length];
+        
+    return (extracted_line);
 }
 
-static char *refactor_line(char *buffer)
+static char *update_buffer_after_line(char *buffer)
 {
-    size_t i;
-    size_t j;
-    char *new_buffer;
-    size_t len_buffer;
+    size_t newline_pos;
+    size_t buffer_len;
+    char *remaining_text;
 
-    i = 0;
-    j = 0;
-    while (buffer[i] && buffer[i] != '\n')
-        i++;
-    if (!buffer[i])
-    {
-        free(buffer);
-        buffer = NULL;
-        return (NULL);
-    }
-    len_buffer = ft_strlen(buffer);
-    new_buffer = malloc(len_buffer - i + 1);
-    i++;
-    while (i <= len_buffer)
-        new_buffer[j++] = buffer[i++];
-    new_buffer[j] = 0;
+    // Find position of newline character
+    newline_pos = 0;
+    while (buffer[newline_pos] && buffer[newline_pos] != '\n')
+        newline_pos++;
+
+    // If no newline found, free buffer and return NULL
+    if (!buffer[newline_pos])
+        return (free(buffer), NULL);
+
+    buffer_len = ft_strlen(buffer);
+    
+    // Allocate space for remaining text after newline
+    remaining_text = malloc(buffer_len - newline_pos + 1);
+    if (!remaining_text)
+        return (free(buffer), NULL);
+
+    // Copy remaining text after newline
+    newline_pos++;
+    buffer_len = 0;
+    while (buffer[newline_pos])
+        remaining_text[buffer_len++] = buffer[newline_pos++];
+    remaining_text[buffer_len] = '\0';
+
     free(buffer);
     buffer = NULL;
-    return (new_buffer);
+    return (remaining_text);
 }
 
 char *get_next_line(int fd)
 {
-    char *line;
-    static char *buffer;
+    char *current_line;
+    static char *storage_buffer;
 
+    // Validate input parameters
     if (fd < 0 || BUFFER_SIZE <= 0)
         return (NULL);
-    buffer = read_line(fd, buffer);
-    if (!buffer)
+
+    // Read content from file into buffer
+    storage_buffer = read_line(fd, storage_buffer);
+    if (!storage_buffer)
         return (NULL);
-    line = create_line(buffer);
-    buffer = refactor_line(buffer);
-    return (line);
+
+    // Extract the next line from buffer
+    current_line = extract_line_from_buffer(storage_buffer);
+
+    // Update buffer to contain remaining content
+    storage_buffer = update_buffer_after_line(storage_buffer);
+
+    return (current_line);
 }
 #include <stdio.h>
 int main()
 {
-    int fd = open("test.txt", O_RDONLY);
+    int fd;
     char *line;
-    while (line = get_next_line(fd))
+    
+    // Test 1: Normal file reading
+    fd = open("test.txt", O_RDONLY);
+    while ((line = get_next_line(fd)))
     {
         printf("%s", line);
         free(line);
     }
+    close(fd);
+    
+    // Test 2: Invalid file descriptor
+    printf("\nTesting invalid fd:\n");
+    line = get_next_line(-1);
+    printf("Result with fd=-1: %s\n", line);
+    free(line);
+    
+    // Test 3: Reading from closed file
+    printf("\nTesting closed file:\n");
+    fd = open("test.txt", O_RDONLY);
+    close(fd);
+    line = get_next_line(fd);
+    printf("Result from closed file: %s\n", line);
+    free(line);
+    
+    // Test 4: Reading empty file
+    printf("\nTesting empty file:\n");
+    fd = open("empty.txt", O_RDONLY);
+    line = get_next_line(fd);
+    printf("Result from empty file: %s\n", line);
+    free(line);
+    close(fd);
+
+    // Test 5: Multiple reads from same file
+    printf("\nTesting multiple reads:\n");
+    fd = open("test.txt", O_RDONLY);
+    for (int i = 0; i < 3; i++)
+    {
+        line = get_next_line(fd);
+        printf("Read %d: %s", i + 1, line);
+        free(line);
+    }
+    close(fd);
+    
+
+    return (0);
 }
 /*
 int main()
