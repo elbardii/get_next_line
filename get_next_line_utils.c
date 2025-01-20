@@ -12,15 +12,15 @@
 
 #include "get_next_line.h"
 
-int	ft_chr_new_line(char *s)
+int	has_newline(char *str)
 {
-	if (!s)
+	if (!str)
 		return (0);
-	while (*s)
+	while (*str)
 	{
-		if (*s == '\n')
+		if (*str == '\n')
 			return (1);
-		s++;
+		str++;
 	}
 	return (0);
 }

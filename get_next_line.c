@@ -21,7 +21,7 @@ static char *read_line(int fd, char *buffer)
     if (!temp_buffer)
         return (NULL);
     bytes_read = 1;
-    while (!ft_chr_new_line(buffer) && bytes_read != 0)
+    while (!has_newline(buffer) && bytes_read != 0)
     {
         bytes_read = read(fd, temp_buffer, BUFFER_SIZE);
         if (bytes_read == -1)
