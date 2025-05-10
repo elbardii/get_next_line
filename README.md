@@ -1,5 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/elbardii/get_next_line)
 # Get Next Line (GNL) -  🚀
-
 ## شنو هو GNL؟ 
 هادا مشروع كيعاونك تقرا سطر بسطر من شي ملف. كيرجع ليك السطر كامل حتى يوصل ل '\n' أو نهاية الملف.
 
